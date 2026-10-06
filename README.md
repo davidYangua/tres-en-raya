@@ -7,8 +7,8 @@ Una versión moderna, elegante y profesional del clásico juego Tres en Raya (Ti
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 ---
-✨ Características Principales
-🎨 Interfaz Neón & Glassmorphism: Diseño estilo Cyberpunk/Dark-Slate con neón Cyan (`X`) y Pink (`O`), con efectos visuales de desenfoque e iluminación.
+#✨ Características Principales
+#🎨 Interfaz Neón & Glassmorphism: Diseño estilo Cyberpunk/Dark-Slate con neón Cyan (`X`) y Pink (`O`), con efectos visuales de desenfoque e iluminación.
 📱 100% Responsivo: Interfaz adaptable a todo tipo de pantallas (Smartphones, Tabletas y Escritorio).
 🎛️ Ventana Modal Centrada: Menú de configuración limpio que aparece sobre un fondo difuminado al hacer clic en el botón principal.
 🤖 Inteligencia Artificial (Modo Individual):
