@@ -28,33 +28,7 @@ Lucide Icons	Set de iconos vectoriales modernos.
 Firebase Cloud Firestore (v11)	Base de datos NoSQL para la sincronización del multijugador en línea.
 Web Audio API	Sintetizador de frecuencias para los sonidos del juego.
 Canvas Confetti	Efecto de celebración para el ganador.
----
-🚀 Despliegue en GitHub Pages
-Dado que todo el proyecto está contenido en un único archivo (`index.html`), publicarlo en GitHub Pages toma menos de 2 minutos:
-Crea un nuevo repositorio en GitHub:
-Nombre sugerido: `tres-en-raya-pro`
-Marca la casilla para que sea público.
-Sube tus archivos:
-Sube el archivo `index.html` y este `README.md` a la rama principal (`main` o `master`).
-Activa GitHub Pages:
-En tu repositorio de GitHub, ve a Settings (Configuración) > Pages.
-En la sección Build and deployment / Source, selecciona `Deploy from a branch`.
-Elige la rama `main` (o `master`), carpeta `/ (root)` y haz clic en Save.
-Espera unos segundos y obtendrás tu URL pública para compartir y jugar desde cualquier dispositivo:
-`https://tu-usuario.github.io/tres-en-raya-pro/`
----
-📁 Estructura del Proyecto
-```text
-├── index.html        # Aplicación completa (HTML, Tailwind, JS, Firebase y Sonidos)
-└── README.md         # Documentación del proyecto
-```
----
-🔧 Configuración del Modo En Línea (Opcional)
-Por defecto, la versión incluye una integración lista para conectarse a Firebase SDK. Si deseas conectar el multijugador a tu propio proyecto de Firebase:
-Crea un proyecto en Firebase Console.
-Habilita Firestore Database y Anonymous Authentication.
-Reemplaza las credenciales de Firebase en el script modular al inicio del `index.html`.
----
+
 📝 Licencia
 Este proyecto está bajo la Licencia MIT. Puedes usarlo, modificarlo y distribuirlo libremente.
 ---
