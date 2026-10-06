@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tres en Raya Pro - Edición Neón</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        neonCyan: '#00f3ff',
+                        neonPink: '#ff007f',
+                        darkSlate: '#0b0f19',
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'neon-cyan': '0 0 20px rgba(0, 243, 255, 0.4), 0 0 40px rgba(0, 243, 255, 0.2)',
+                        'neon-pink': '0 0 20px rgba(255, 0, 127, 0.4), 0 0 40px rgba(255, 0, 127, 0.2)',
+                        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #070913;
+            color: #f1f5f9;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Glassmorphism utility classes */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-modal {
+            background: rgba(11, 15, 25, 0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .text-glow-cyan {
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.7), 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+
+        .text-glow-pink {
+            text-shadow: 0 0 10px rgba(255, 0, 127, 0.7), 0 0 20px rgba(255, 0, 127, 0.4);
+        }
+
+        /* Animated grid background */
+        .bg-grid-pattern {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+
+        /* Custom cell symbol pop animation */
+        @keyframes popIn {
+            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+            70% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .animate-pop {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Pulse glow animation for active turn indicator */
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        .animate-glow-pulse {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        /* Win stroke SVG line drawing */
+        .win-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: strokeDraw 0.6s ease-out forwards;
+        }
+
+        @keyframes strokeDraw {
+            to { stroke-dashoffset: 0; }
+        }
+    </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.FirebaseSDK = {
+            initializeApp,
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
+            onAuthStateChanged,
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            updateDoc,
+            onSnapshot,
+            collection
+        };
+    </script>
+</head>
+<body class="min-h-screen bg-grid-pattern text-slate-100 flex flex-col justify-between relative overflow-y-auto">
+
+    <!-- Ambient Glowing Orbs Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-cyan-600/20 rounded-full blur-[120px]"></div>
+        <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-pink-600/20 rounded-full blur-[120px]"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[150px]"></div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <header class="w-full max-w-6xl mx-auto px-6 py-6 flex items-center justify-between z-10">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-pink-500 flex items-center justify-center font-black text-xl text-slate-950 shadow-lg">
+                X
+            </div>
+            <span class="font-bold text-xl tracking-wider text-slate-100">TRES EN RAYA</span>
+        </div>
+
+        <button id="globalSoundToggle" onclick="game.toggleSound()" class="p-2.5 rounded-xl glass-card text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all flex items-center gap-2 text-sm font-medium border border-slate-700/50">
+            <i data-lucide="volume-2" id="soundIcon" class="w-5 h-5 text-cyan-400"></i>
+            <span id="soundLabel" class="hidden sm:inline">Sonido ON</span>
+        </button>
+    </header>
+
+    <!-- Main Landing / Hero View -->
+    <main class="flex-1 flex flex-col items-center justify-center px-4 py-8 z-10 text-center max-w-4xl mx-auto">
+        
+        <!-- Hero Decorative Elements -->
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs font-semibold text-cyan-400 mb-6 shadow-xl backdrop-blur-md">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+            ❌ ⭕
+        </div>
+
+        <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-4">
+            PRUEBA <br>
+            <span class="bg-gradient-to-r from-cyan-400 via-teal-300 to-pink-500 bg-clip-text text-transparent">
+                TRES EN RAYA CLÁSICO
+            </span>
+        </h1>
+
+        <p class="text-slate-400 text-base sm:text-lg max-w-xl mb-10 leading-relaxed">
+            
+        </p>
+
+        <!-- Main Trigger Button -->
+        <div class="relative group">
+            <div class="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-pink-500 rounded-2xl blur-lg opacity-70 group-hover:opacity-100 transition duration-300 animate-pulse"></div>
+            <button onclick="ui.openModal()" class="relative px-10 py-5 rounded-2xl bg-slate-950 font-black text-xl text-white tracking-wide shadow-2xl flex items-center gap-4 hover:scale-105 active:scale-95 transition-all duration-200 border border-slate-700">
+                <i data-lucide="play" class="w-7 h-7 fill-cyan-400 text-cyan-400"></i>
+                <span>¡JUGAR AHORA!</span>
+            </button>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mt-16 max-w-3xl">
+            <div class="glass-card p-5 rounded-2xl text-left border border-slate-800 hover:border-slate-700 transition">
+                <div class="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 mb-3">
+                    <i data-lucide="bot" class="w-5 h-5"></i>
+                </div>
+                <h3 class="font-bold text-slate-200 mb-1">Modo Local</h3>
+                <p class="text-xs text-slate-400">Juega contra tu pc en 3 niveles de dificultad.</p>
+            </div>
+
+            <div class="glass-card p-5 rounded-2xl text-left border border-slate-800 hover:border-slate-700 transition">
+                <div class="w-10 h-10 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-400 mb-3">
+                    <i data-lucide="globe" class="w-5 h-5"></i>
+                </div>
+                <h3 class="font-bold text-slate-200 mb-1">Modo En Línea</h3>
+                <p class="text-xs text-slate-400">Crea salas privadas con código de 6 dígitos para jugar a distancia.</p>
+            </div>
+
+            <div class="glass-card p-5 rounded-2xl text-left border border-slate-800 hover:border-slate-700 transition">
+                <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 mb-3">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                </div>
+                <h3 class="font-bold text-slate-200 mb-1">Multijugador Local</h3>
+                <p class="text-xs text-slate-400">Juega frente a frente en el mismo celular o computadora.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-6 text-xs text-slate-500 border-t border-slate-800/40 z-10">
+        Tres en Raya Pro &bull; Diseñado por David Yangua
+    </footer>
+
+    <!-- GAME MODAL OVERLAY -->
+    <div id="gameModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 opacity-0 pointer-events-none transition-all duration-300">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onclick="ui.closeModal()"></div>
+
+        <!-- Modal Container -->
+        <div class="relative w-full max-w-lg glass-modal rounded-3xl shadow-2xl p-5 sm:p-7 border border-slate-700/60 flex flex-col items-center overflow-hidden max-h-[92vh] overflow-y-auto">
+            
+            <!-- Close Modal Cross Button -->
+            <button onclick="ui.closeModal()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full bg-slate-800/50 hover:bg-slate-800 transition z-20">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <!-- Notification Toast / Alert Inside Modal -->
+            <div id="modalToast" class="hidden w-full mb-4 p-3 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 text-xs text-center flex items-center justify-center gap-2 animate-bounce">
+                <i data-lucide="info" class="w-4 h-4 text-cyan-400"></i>
+                <span id="modalToastText">Mensaje de estado</span>
+            </div>
+
+            <!-- VIEW 1: MODE SELECTOR -->
+            <div id="viewModeSelect" class="w-full flex flex-col items-center">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-black text-slate-100 mb-1">Selecciona Modo de Juego</h2>
+                    <p class="text-xs text-slate-400">¿Cómo te gustaría jugar hoy?</p>
+                </div>
+
+                <div class="w-full space-y-3.5">
+                    
+                    <!-- Mode: AI -->
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400">
+                                    <i data-lucide="bot" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-200">Contra tu Dispositivo</h3>
+                                    <p class="text-xs text-slate-400">Juega solo contra la máquina</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Difficulty Options -->
+                        <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/80">
+                            <button onclick="game.startAIMode('easy')" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-cyan-600/30 hover:border-cyan-500/50 border border-transparent text-xs font-semibold text-slate-300 hover:text-cyan-300 transition text-center">
+                                Fácil
+                            </button>
+                            <button onclick="game.startAIMode('medium')" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-cyan-600/30 hover:border-cyan-500/50 border border-transparent text-xs font-semibold text-slate-300 hover:text-cyan-300 transition text-center">
+                                Medio
+                            </button>
+                            <button onclick="game.startAIMode('hard')" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-cyan-600/30 hover:border-cyan-500/50 border border-transparent text-xs font-semibold text-slate-300 hover:text-cyan-300 transition text-center">
+                                 Imbatible
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mode: Local Pass & Play -->
+                    <button onclick="game.startLocalMode()" class="w-full p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-pink-500/50 transition flex items-center justify-between group">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-xl bg-pink-500/10 text-pink-400 group-hover:scale-110 transition">
+                                <i data-lucide="users" class="w-6 h-6"></i>
+                            </div>
+                            <div class="text-left">
+                                <h3 class="font-bold text-slate-200 group-hover:text-pink-300 transition">Jugador 1 vs Jugador 2</h3>
+                                <p class="text-xs text-slate-400">En el mismo dispositivo paso a paso</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-500 group-hover:text-pink-400 transition"></i>
+                    </button>
+
+                    <!-- Mode: Online Multiplayer -->
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
+                                <i data-lucide="wifi" class="w-6 h-6"></i>
+                            </div>
+                            <div class="text-left">
+                                <h3 class="font-bold text-slate-200">Multijugador en Línea</h3>
+                                <p class="text-xs text-slate-400">Crea o únete a salas en tiempo real</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+                            <button onclick="ui.showOnlineSubMenu('create')" class="py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-xs font-semibold text-purple-300 transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i> Crear Sala
+                            </button>
+                            <button onclick="ui.showOnlineSubMenu('join')" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="log-in" class="w-4 h-4"></i> Unirse a Sala
+                            </button>
+                        </div>
+
+                        <!-- Subpanel: Join Room Input -->
+                        <div id="joinRoomSubpanel" class="hidden mt-3 pt-3 border-t border-slate-800 flex flex-col gap-2">
+                            <input id="roomCodeInput" type="text" maxlength="6" placeholder="Ingresa código (6 dígitos)" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-center font-mono text-lg tracking-widest text-slate-100 uppercase focus:outline-none focus:border-purple-500">
+                            <button onclick="onlineManager.joinRoomFromInput()" class="w-full py-2 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold text-xs text-white transition">
+                                Conectar a Partida
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: ONLINE ROOM LOBBY -->
+            <div id="viewOnlineLobby" class="hidden w-full flex flex-col items-center text-center">
+                <div class="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 mb-4 animate-pulse">
+                    <i data-lucide="loader" class="w-8 h-8 animate-spin"></i>
+                </div>
+
+                <h2 class="text-2xl font-black text-slate-100 mb-1">Sala Creada Exitosamente</h2>
+                <p class="text-xs text-slate-400 mb-6">Comparte el siguiente código con tu oponente para comenzar:</p>
+
+                <div class="w-full max-w-xs p-4 rounded-2xl bg-slate-950 border border-purple-500/50 flex flex-col items-center gap-2 mb-6 shadow-inner">
+                    <span class="text-xs text-slate-400 font-medium">CÓDIGO DE SALA</span>
+                    <span id="displayRoomCode" class="font-mono text-3xl font-black tracking-widest text-purple-400">------</span>
+                    <button onclick="ui.copyRoomCode()" class="mt-1 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 flex items-center gap-1 border border-slate-700 transition">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Código
+                    </button>
+                </div>
+
+                <p class="text-xs text-amber-400/90 flex items-center gap-1.5 mb-6">
+                    <i data-lucide="wifi" class="w-4 h-4 animate-ping"></i> Esperando a que el segundo jugador se conecte...
+                </p>
+
+                <button onclick="ui.showView('select')" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 transition">
+                    Cancelar
+                </button>
+            </div>
+
+            <!-- VIEW 3: GAME BOARD INTERFACE -->
+            <div id="viewGameBoard" class="hidden w-full flex flex-col items-center">
+                
+                <!-- Game Header Info -->
+                <div class="w-full flex items-center justify-between mb-4 px-1">
+                    <span id="gameModeBadge" class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold text-cyan-400 flex items-center gap-1">
+                        <i data-lucide="bot" class="w-3.5 h-3.5"></i> Modo VS Computador (Fácil)
+                    </span>
+
+                    <button onclick="ui.showView('select')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 underline transition">
+                        Cambiar modo
+                    </button>
+                </div>
+
+                <!-- Scoreboard -->
+                <div class="w-full grid grid-cols-3 gap-2 mb-5">
+                    <!-- Player X Score -->
+                    <div id="scoreBoxX" class="glass-card p-3 rounded-2xl flex flex-col items-center border-l-4 border-l-cyan-400">
+                        <span id="labelX" class="text-[10px] sm:text-xs font-bold text-cyan-400 uppercase tracking-wider truncate max-w-[90%]">Jugador X</span>
+                        <span id="scoreX" class="text-xl sm:text-2xl font-black text-slate-100">0</span>
+                    </div>
+
+                    <!-- Draws Score -->
+                    <div class="glass-card p-3 rounded-2xl flex flex-col items-center border-l-4 border-l-slate-500">
+                        <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Empates</span>
+                        <span id="scoreDraws" class="text-xl sm:text-2xl font-black text-slate-100">0</span>
+                    </div>
+
+                    <!-- Player O Score -->
+                    <div id="scoreBoxO" class="glass-card p-3 rounded-2xl flex flex-col items-center border-l-4 border-l-pink-500">
+                        <span id="labelO" class="text-[10px] sm:text-xs font-bold text-pink-400 uppercase tracking-wider truncate max-w-[90%]">Jugador O</span>
+                        <span id="scoreO" class="text-xl sm:text-2xl font-black text-slate-100">0</span>
+                    </div>
+                </div>
+
+                <!-- Turn Indicator Bar -->
+                <div class="w-full py-2 px-4 rounded-xl bg-slate-900/90 border border-slate-800 text-center mb-5 flex items-center justify-center gap-2">
+                    <span id="turnStatusText" class="text-sm font-bold text-slate-200">
+                        Turno de: <span id="currentTurnBadge" class="text-cyan-400">X</span>
+                    </span>
+                </div>
+
+                <!-- THE 3x3 GAME BOARD GRID -->
+                <div class="relative w-full max-w-[320px] sm:max-w-[360px] aspect-square">
+                    
+                    <!-- SVG Strike-Through Overlay for Win Line -->
+                    <svg id="winLineSvg" class="absolute inset-0 w-full h-full pointer-events-none z-20 hidden">
+                        <line id="winSvgLine" x1="0" y1="0" x2="0" y2="0" stroke="#00f3ff" stroke-width="8" stroke-linecap="round" class="win-line" />
+                    </svg>
+
+                    <!-- Cells Container -->
+                    <div class="grid grid-cols-3 gap-2.5 sm:gap-3 w-full h-full p-2 bg-slate-950/80 rounded-3xl border border-slate-800 shadow-inner">
+                        <button onclick="game.handleCellClick(0)" class="cell-btn glass-card rounded-2xl flex items-center justify-center text-4xl sm:text-5xl font-black transition active:scale-95 border border-slate-800/80 hover:border-slate-700 focus:outline-none"></button>
+                        <button onclick="game.handleCellClick(1)" class="cell-btn glass-card rounded-2xl flex items-center justify-center text-4xl sm:text-5xl font-black transition active:scale-95 border border-slate-800/80 hover:border-slate-700 focus:outline-none"></button>
+                        <button onclick="game.handleCellClick(2)" class="cell-btn glass-card rounded-2xl flex items-center justify-center text-4xl sm:text-5xl font-black transition active:scale-95 border border-slate-800/80 hover:border-slate-700 focus:outline-none"></button>
+
+                        <button onclick="game.handleCellClick(3)" class="cell-btn glass-card rounded-2xl flex items-center justify-center text-4xl sm:text-5xl font-black transition active:scale-95 border border-slate-800/80 hover:border-slate-700 focus:outline-none"></button>
+                        <button onclick="game.handleCellClick(4)" class="cell-btn glass-card rounded-2xl flex items-center justify-center text-4xl sm:text-5xl font-black transition active:scale-95 border border-slate-800/80 hover:border-slate-700 focus:outline-none"></button>
+                        <button onclick="game.handleCellClick(5)" class="cell-btn glass-card rounded-2xl flex items-center justify-center text-4xl sm:text-5xl font-black transition active:scale-95 border border-slate-800/80 hover:border-slate-700 focus:outline-none"></button>
+
+                        <button onclick="game.handleCellClick(6)" class="cell-btn glass-card rounded-2xl flex items-center justify-center text-4xl sm:text-5xl font-black transition active:scale-95 border border-slate-800/80 hover:border-slate-700 focus:outline-none"></button>
+                        <button onclick="game.handleCellClick(7)" class="cell-btn glass-card rounded-2xl flex items-center justify-center text-4xl sm:text-5xl font-black transition active:scale-95 border border-slate-800/80 hover:border-slate-700 focus:outline-none"></button>
+                        <button onclick="game.handleCellClick(8)" class="cell-btn glass-card rounded-2xl flex items-center justify-center text-4xl sm:text-5xl font-black transition active:scale-95 border border-slate-800/80 hover:border-slate-700 focus:outline-none"></button>
+                    </div>
+                </div>
+
+                <!-- Footer Control Buttons -->
+                <div class="w-full flex items-center justify-center gap-3 mt-6">
+                    <button onclick="game.resetMatch()" class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 transition flex items-center justify-center gap-2 shadow-lg active:scale-95">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 text-cyan-400"></i> Reiniciar Partida
+                    </button>
+                    <button onclick="ui.showView('select')" class="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-400 hover:text-slate-200 transition active:scale-95">
+                        Opciones
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC ENGINE -->
+    <script>
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playMoveX() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
+                osc.frequency.exponentialRampToValueAtTime(783.99, this.ctx.currentTime + 0.12); // G5
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.12);
+            }
+
+            playMoveO() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, this.ctx.currentTime); // A4
+                osc.frequency.exponentialRampToValueAtTime(329.63, this.ctx.currentTime + 0.15); // E4
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            }
+
+            playWin() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.1);
+                    gain.gain.setValueAtTime(0.25, this.ctx.currentTime + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.1 + 0.25);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(this.ctx.currentTime + idx * 0.1);
+                    osc.stop(this.ctx.currentTime + idx * 0.1 + 0.25);
+                });
+            }
+
+            playDraw() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(150, this.ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.3);
+            }
+
+            playClick() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            }
+        }
+
+        const audio = new SoundFX();
+
+        class MinimaxAI {
+            static getBestMove(board, difficulty) {
+                const emptyIndices = board.map((val, idx) => val === '' ? idx : null).filter(val => val !== null);
+                if (emptyIndices.length === 0) return null;
+
+                // Easy mode: Completely random choices
+                if (difficulty === 'easy') {
+                    return emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+                }
+
+                // Medium mode: Mix of tactical smarts + occasional random errors
+                if (difficulty === 'medium') {
+                    if (Math.random() < 0.35) {
+                        return emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+                    }
+                }
+
+                // Hard / Imbatible mode: Full Minimax Search
+                let bestScore = -Infinity;
+                let bestMove = emptyIndices[0];
+
+                for (let idx of emptyIndices) {
+                    board[idx] = 'O';
+                    let score = MinimaxAI.minimax(board, 0, false);
+                    board[idx] = '';
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = idx;
+                    }
+                }
+
+                return bestMove;
+            }
+
+            static minimax(board, depth, isMaximizing) {
+                const winner = MinimaxAI.checkWinner(board);
+                if (winner === 'O') return 10 - depth;
+                if (winner === 'X') return depth - 10;
+                if (winner === 'draw') return 0;
+
+                const emptyIndices = board.map((val, idx) => val === '' ? idx : null).filter(val => val !== null);
+
+                if (isMaximizing) {
+                    let bestScore = -Infinity;
+                    for (let idx of emptyIndices) {
+                        board[idx] = 'O';
+                        let score = MinimaxAI.minimax(board, depth + 1, false);
+                        board[idx] = '';
+                        bestScore = Math.max(score, bestScore);
+                    }
+                    return bestScore;
+                } else {
+                    let bestScore = Infinity;
+                    for (let idx of emptyIndices) {
+                        board[idx] = 'X';
+                        let score = MinimaxAI.minimax(board, depth + 1, true);
+                        board[idx] = '';
+                        bestScore = Math.min(score, bestScore);
+                    }
+                    return bestScore;
+                }
+            }
+
+            static checkWinner(board) {
+                const combos = [
+                    [0,1,2], [3,4,5], [6,7,8],
+                    [0,3,6], [1,4,7], [2,5,8],
+                    [0,4,8], [2,4,6]
+                ];
+
+                for (let [a, b, c] of combos) {
+                    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                        return board[a];
+                    }
+                }
+
+                if (board.every(cell => cell !== '')) return 'draw';
+                return null;
+            }
+        }
+
+        class OnlineManager {
+            constructor() {
+                this.db = null;
+                this.auth = null;
+                this.user = null;
+                this.appId = typeof __app_id !== 'undefined' ? __app_id : 'tictactoe-pro-app';
+                this.roomRef = null;
+                this.unsubscribeRoom = null;
+                this.mySymbol = 'X'; // 'X' for host/creator, 'O' for joiner
+                this.currentRoomCode = null;
+                this.isOnlineActive = false;
+                this.initialized = false;
+            }
+
+            async initFirebase() {
+                if (this.initialized) return true;
+
+                try {
+                    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+                    if (!firebaseConfig || !window.FirebaseSDK) {
+                        console.warn("Firebase config not found. Online mode will run in demo/offline preview fallback.");
+                        return false;
+                    }
+
+                    const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, getFirestore } = window.FirebaseSDK;
+                    const app = initializeApp(firebaseConfig);
+                    this.auth = getAuth(app);
+                    this.db = getFirestore(app);
+
+                    const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                    if (initialToken) {
+                        const userCred = await signInWithCustomToken(this.auth, initialToken);
+                        this.user = userCred.user;
+                    } else {
+                        const userCred = await signInAnonymously(this.auth);
+                        this.user = userCred.user;
+                    }
+
+                    this.initialized = true;
+                    return true;
+                } catch (err) {
+                    console.error("Firebase init error:", err);
+                    return false;
+                }
+            }
+
+            async createRoom() {
+                ui.showToast("Inicializando sala en vivo...");
+                const success = await this.initFirebase();
+                if (!success) {
+                    ui.showToast("No se pudo conectar a los servidores en línea.");
+                    return;
+                }
+
+                const code = Math.floor(100000 + Math.random() * 900000).toString();
+                this.currentRoomCode = code;
+                this.mySymbol = 'X';
+                this.isOnlineActive = true;
+
+                const { doc, setDoc } = window.FirebaseSDK;
+                const roomPath = `artifacts/${this.appId}/public/data/rooms/${code}`;
+                this.roomRef = doc(this.db, roomPath);
+
+                const initialData = {
+                    code: code,
+                    board: Array(9).fill(''),
+                    turn: 'X',
+                    status: 'waiting', // waiting, playing, finished
+                    hostId: this.user.uid,
+                    guestId: null,
+                    winner: null,
+                    winCombo: null,
+                    updatedAt: Date.now()
+                };
+
+                await setDoc(this.roomRef, initialData);
+                document.getElementById('displayRoomCode').innerText = code;
+                ui.showView('lobby');
+                this.listenToRoom();
+            }
+
+            async joinRoomFromInput() {
+                const input = document.getElementById('roomCodeInput');
+                const code = input.value.trim().toUpperCase();
+
+                if (code.length !== 6) {
+                    ui.showToast("El código debe tener 6 dígitos.");
+                    return;
+                }
+
+                ui.showToast("Buscando sala...");
+                const success = await this.initFirebase();
+                if (!success) {
+                    ui.showToast("Error de conexión al servidor.");
+                    return;
+                }
+
+                const { doc, getDoc, updateDoc } = window.FirebaseSDK;
+                const roomPath = `artifacts/${this.appId}/public/data/rooms/${code}`;
+                this.roomRef = doc(this.db, roomPath);
+
+                try {
+                    const snap = await getDoc(this.roomRef);
+                    if (!snap.exists()) {
+                        ui.showToast("La sala especificada no existe.");
+                        return;
+                    }
+
+                    const data = snap.data();
+                    if (data.status !== 'waiting' && data.guestId !== this.user.uid) {
+                        ui.showToast("La sala ya está llena o la partida terminó.");
+                        return;
+                    }
+
+                    this.currentRoomCode = code;
+                    this.mySymbol = 'O';
+                    this.isOnlineActive = true;
+
+                    await updateDoc(this.roomRef, {
+                        guestId: this.user.uid,
+                        status: 'playing',
+                        updatedAt: Date.now()
+                    });
+
+                    game.startOnlineMode(this.mySymbol);
+                    this.listenToRoom();
+
+                } catch (e) {
+                    console.error("Join room error:", e);
+                    ui.showToast("Error al unirse a la sala.");
+                }
+            }
+
+            listenToRoom() {
+                if (!this.roomRef || !window.FirebaseSDK) return;
+                const { onSnapshot } = window.FirebaseSDK;
+
+                if (this.unsubscribeRoom) this.unsubscribeRoom();
+
+                this.unsubscribeRoom = onSnapshot(this.roomRef, (snapshot) => {
+                    if (!snapshot.exists()) return;
+                    const data = snapshot.data();
+
+                    // If we were in lobby and second player joined:
+                    if (data.status === 'playing' && game.mode !== 'online') {
+                        game.startOnlineMode(this.mySymbol);
+                    }
+
+                    game.syncOnlineState(data);
+                }, (error) => {
+                    console.error("Room listener error:", error);
+                });
+            }
+
+            async makeMove(index) {
+                if (!this.roomRef || !this.isOnlineActive) return;
+                const { updateDoc } = window.FirebaseSDK;
+
+                const newBoard = [...game.board];
+                newBoard[index] = this.mySymbol;
+                const nextTurn = this.mySymbol === 'X' ? 'O' : 'X';
+
+                const check = game.evaluateBoard(newBoard);
+
+                await updateDoc(this.roomRef, {
+                    board: newBoard,
+                    turn: nextTurn,
+                    winner: check ? check.winner : null,
+                    winCombo: check ? check.combo : null,
+                    status: check ? 'finished' : 'playing',
+                    updatedAt: Date.now()
+                });
+            }
+
+            async resetOnlineMatch() {
+                if (!this.roomRef) return;
+                const { updateDoc } = window.FirebaseSDK;
+
+                await updateDoc(this.roomRef, {
+                    board: Array(9).fill(''),
+                    turn: 'X',
+                    winner: null,
+                    winCombo: null,
+                    status: 'playing',
+                    updatedAt: Date.now()
+                });
+            }
+
+            disconnect() {
+                if (this.unsubscribeRoom) {
+                    this.unsubscribeRoom();
+                    this.unsubscribeRoom = null;
+                }
+                this.isOnlineActive = false;
+                this.roomRef = null;
+            }
+        }
+
+        const onlineManager = new OnlineManager();
+
+        class GameEngine {
+            constructor() {
+                this.board = Array(9).fill('');
+                this.currentTurn = 'X'; // 'X' always starts
+                this.mode = 'ai'; // 'ai', 'local', 'online'
+                this.aiDifficulty = 'easy'; // 'easy', 'medium', 'hard'
+                this.isGameOver = false;
+
+                this.scores = {
+                    X: 0,
+                    O: 0,
+                    draws: 0
+                };
+
+                this.winCombos = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+                    [0, 4, 8], [2, 4, 6]             // Diagonals
+                ];
+            }
+
+            toggleSound() {
+                audio.muted = !audio.muted;
+                const soundIcon = document.getElementById('soundIcon');
+                const soundLabel = document.getElementById('soundLabel');
+                
+                if (audio.muted) {
+                    soundIcon.setAttribute('data-lucide', 'volume-x');
+                    soundIcon.classList.remove('text-cyan-400');
+                    soundIcon.classList.add('text-slate-500');
+                    if (soundLabel) soundLabel.innerText = "Sonido OFF";
+                } else {
+                    soundIcon.setAttribute('data-lucide', 'volume-2');
+                    soundIcon.classList.remove('text-slate-500');
+                    soundIcon.classList.add('text-cyan-400');
+                    if (soundLabel) soundLabel.innerText = "Sonido ON";
+                }
+                lucide.createIcons();
+            }
+
+            startAIMode(difficulty) {
+                onlineManager.disconnect();
+                this.mode = 'ai';
+                this.aiDifficulty = difficulty;
+                this.updateBadges();
+                this.resetMatch();
+                ui.showView('board');
+            }
+
+            startLocalMode() {
+                onlineManager.disconnect();
+                this.mode = 'local';
+                this.updateBadges();
+                this.resetMatch();
+                ui.showView('board');
+            }
+
+            startOnlineMode(symbol) {
+                this.mode = 'online';
+                this.updateBadges();
+                this.resetMatch();
+                ui.showView('board');
+            }
+
+            updateBadges() {
+                const badge = document.getElementById('gameModeBadge');
+                const labelX = document.getElementById('labelX');
+                const labelO = document.getElementById('labelO');
+
+                if (this.mode === 'ai') {
+                    const diffText = this.aiDifficulty === 'easy' ? 'Fácil' : (this.aiDifficulty === 'medium' ? 'Medio' : 'Imbatible');
+                    badge.innerHTML = `<i data-lucide="bot" class="w-3.5 h-3.5"></i> Modo VS Computador (${diffText})`;
+                    labelX.innerText = "Tú (X)";
+                    labelO.innerText = "Pc (O)";
+                } else if (this.mode === 'local') {
+                    badge.innerHTML = `<i data-lucide="users" class="w-3.5 h-3.5"></i> Jugador 1 vs Jugador 2`;
+                    labelX.innerText = "Jugador X";
+                    labelO.innerText = "Jugador O";
+                } else if (this.mode === 'online') {
+                    badge.innerHTML = `<i data-lucide="wifi" class="w-3.5 h-3.5"></i> En Línea (${onlineManager.mySymbol})`;
+                    labelX.innerText = onlineManager.mySymbol === 'X' ? "Tú (X)" : "Rival (X)";
+                    labelO.innerText = onlineManager.mySymbol === 'O' ? "Tú (O)" : "Rival (O)";
+                }
+                lucide.createIcons();
+            }
+
+            handleCellClick(index) {
+                if (this.isGameOver || this.board[index] !== '') return;
+
+                if (this.mode === 'online') {
+                    if (this.currentTurn !== onlineManager.mySymbol) {
+                        ui.showToast("Es el turno del rival.");
+                        return;
+                    }
+                    onlineManager.makeMove(index);
+                    return;
+                }
+
+                // Local or AI Mode Move
+                this.executeMove(index, this.currentTurn);
+
+                if (!this.isGameOver && this.mode === 'ai' && this.currentTurn === 'O') {
+                    // Trigger AI Move with slight realistic delay
+                    setTimeout(() => {
+                        const aiMove = MinimaxAI.getBestMove(this.board, this.aiDifficulty);
+                        if (aiMove !== null && !this.isGameOver) {
+                            this.executeMove(aiMove, 'O');
+                        }
+                    }, 400);
+                }
+            }
+
+            executeMove(index, symbol) {
+                this.board[index] = symbol;
+
+                if (symbol === 'X') audio.playMoveX();
+                else audio.playMoveO();
+
+                ui.renderBoard(this.board);
+
+                const check = this.evaluateBoard(this.board);
+
+                if (check) {
+                    this.handleGameOver(check.winner, check.combo);
+                } else {
+                    this.currentTurn = this.currentTurn === 'X' ? 'O' : 'X';
+                    ui.updateTurnIndicator(this.currentTurn);
+                }
+            }
+
+            evaluateBoard(b) {
+                for (let combo of this.winCombos) {
+                    const [a, bIdx, c] = combo;
+                    if (b[a] && b[a] === b[bIdx] && b[a] === b[c]) {
+                        return { winner: b[a], combo: combo };
+                    }
+                }
+                if (b.every(cell => cell !== '')) {
+                    return { winner: 'draw', combo: null };
+                }
+                return null;
+            }
+
+            handleGameOver(winner, combo) {
+                this.isGameOver = true;
+
+                if (winner === 'draw') {
+                    this.scores.draws++;
+                    audio.playDraw();
+                    ui.updateTurnIndicator('draw');
+                } else {
+                    this.scores[winner]++;
+                    audio.playWin();
+                    ui.updateTurnIndicator(winner, true);
+                    ui.drawWinLine(combo);
+                    
+                    // Trigger victory confetti burst
+                    if (typeof confetti === 'function') {
+                        confetti({
+                            particleCount: 80,
+                            spread: 70,
+                            origin: { y: 0.6 }
+                        });
+                    }
+                }
+
+                ui.updateScores(this.scores);
+            }
+
+            syncOnlineState(data) {
+                this.board = data.board;
+                this.currentTurn = data.turn;
+
+                ui.renderBoard(this.board);
+
+                if (data.status === 'finished' && data.winner) {
+                    this.isGameOver = true;
+                    if (data.winner === 'draw') {
+                        ui.updateTurnIndicator('draw');
+                    } else {
+                        ui.updateTurnIndicator(data.winner, true);
+                        if (data.winCombo) ui.drawWinLine(data.winCombo);
+                    }
+                } else {
+                    this.isGameOver = false;
+                    ui.clearWinLine();
+                    ui.updateTurnIndicator(this.currentTurn);
+                }
+            }
+
+            resetMatch() {
+                if (this.mode === 'online') {
+                    onlineManager.resetOnlineMatch();
+                    return;
+                }
+
+                this.board = Array(9).fill('');
+                this.currentTurn = 'X';
+                this.isGameOver = false;
+
+                ui.clearWinLine();
+                ui.renderBoard(this.board);
+                ui.updateTurnIndicator(this.currentTurn);
+            }
+        }
+
+        const game = new GameEngine();
+
+        class UIController {
+            constructor() {
+                this.modal = document.getElementById('gameModal');
+                this.views = {
+                    select: document.getElementById('viewModeSelect'),
+                    lobby: document.getElementById('viewOnlineLobby'),
+                    board: document.getElementById('viewGameBoard')
+                };
+            }
+
+            openModal() {
+                audio.playClick();
+                this.modal.classList.remove('opacity-0', 'pointer-events-none');
+                this.modal.classList.add('opacity-100');
+            }
+
+            closeModal() {
+                audio.playClick();
+                this.modal.classList.remove('opacity-100');
+                this.modal.classList.add('opacity-0', 'pointer-events-none');
+            }
+
+            showView(viewName) {
+                audio.playClick();
+                Object.keys(this.views).forEach(key => {
+                    this.views[key].classList.add('hidden');
+                });
+                if (this.views[viewName]) {
+                    this.views[viewName].classList.remove('hidden');
+                }
+            }
+
+            showOnlineSubMenu(action) {
+                audio.playClick();
+                const sub = document.getElementById('joinRoomSubpanel');
+                if (action === 'join') {
+                    sub.classList.remove('hidden');
+                } else if (action === 'create') {
+                    sub.classList.add('hidden');
+                    onlineManager.createRoom();
+                }
+            }
+
+            showToast(msg) {
+                const toast = document.getElementById('modalToast');
+                const text = document.getElementById('modalToastText');
+                text.innerText = msg;
+                toast.classList.remove('hidden');
+
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 3500);
+            }
+
+            copyRoomCode() {
+                const code = document.getElementById('displayRoomCode').innerText;
+                if (!code || code === '------') return;
+
+                const textarea = document.createElement('textarea');
+                textarea.value = code;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    this.showToast("¡Código copiado al portapapeles!");
+                } catch (err) {
+                    this.showToast("Código: " + code);
+                }
+                document.body.removeChild(textarea);
+            }
+
+            renderBoard(board) {
+                const cells = document.querySelectorAll('.cell-btn');
+                cells.forEach((cell, idx) => {
+                    const val = board[idx];
+                    cell.innerHTML = '';
+                    cell.classList.remove('text-cyan-400', 'text-pink-500', 'text-glow-cyan', 'text-glow-pink');
+
+                    if (val === 'X') {
+                        cell.innerHTML = `<span class="animate-pop text-cyan-400 text-glow-cyan">X</span>`;
+                    } else if (val === 'O') {
+                        cell.innerHTML = `<span class="animate-pop text-pink-500 text-glow-pink">O</span>`;
+                    }
+                });
+            }
+
+            updateTurnIndicator(turn, isWinner = false) {
+                const turnText = document.getElementById('turnStatusText');
+                const boxX = document.getElementById('scoreBoxX');
+                const boxO = document.getElementById('scoreBoxO');
+
+                boxX.classList.remove('ring-2', 'ring-cyan-400', 'bg-cyan-950/30');
+                boxO.classList.remove('ring-2', 'ring-pink-500', 'bg-pink-950/30');
+
+                if (isWinner) {
+                    turnText.innerHTML = `<span class="text-emerald-400 font-extrabold text-lg">¡VICTORIA PARA JUGADOR ${turn}!</span>`;
+                    if (turn === 'X') boxX.classList.add('ring-2', 'ring-cyan-400', 'bg-cyan-950/30');
+                    if (turn === 'O') boxO.classList.add('ring-2', 'ring-pink-500', 'bg-pink-950/30');
+                } else if (turn === 'draw') {
+                    turnText.innerHTML = `<span class="text-amber-400 font-extrabold text-lg">¡EMPATE TÁCTICO!</span>`;
+                } else {
+                    const colorClass = turn === 'X' ? 'text-cyan-400 font-black' : 'text-pink-500 font-black';
+                    turnText.innerHTML = `Turno de: <span class="${colorClass} text-base">${turn}</span>`;
+
+                    if (turn === 'X') boxX.classList.add('ring-2', 'ring-cyan-400', 'bg-cyan-950/30');
+                    if (turn === 'O') boxO.classList.add('ring-2', 'ring-pink-500', 'bg-pink-950/30');
+                }
+            }
+
+            updateScores(scores) {
+                document.getElementById('scoreX').innerText = scores.X;
+                document.getElementById('scoreO').innerText = scores.O;
+                document.getElementById('scoreDraws').innerText = scores.draws;
+            }
+
+            drawWinLine(combo) {
+                if (!combo) return;
+                const svg = document.getElementById('winLineSvg');
+                const line = document.getElementById('winSvgLine');
+                svg.classList.remove('hidden');
+
+                // Map grid cell indices to percentage coordinates on a 100x100 canvas
+                const coords = {
+                    0: { x: 16.6, y: 16.6 },
+                    1: { x: 50.0, y: 16.6 },
+                    2: { x: 83.3, y: 16.6 },
+                    3: { x: 16.6, y: 50.0 },
+                    4: { x: 50.0, y: 50.0 },
+                    5: { x: 83.3, y: 50.0 },
+                    6: { x: 16.6, y: 83.3 },
+                    7: { x: 50.0, y: 83.3 },
+                    8: { x: 83.3, y: 83.3 }
+                };
+
+                const start = coords[combo[0]];
+                const end = coords[combo[2]];
+
+                line.setAttribute('x1', `${start.x}%`);
+                line.setAttribute('y1', `${start.y}%`);
+                line.setAttribute('x2', `${end.x}%`);
+                line.setAttribute('y2', `${end.y}%`);
+
+                const winnerSymbol = game.board[combo[0]];
+                line.setAttribute('stroke', winnerSymbol === 'X' ? '#00f3ff' : '#ff007f');
+            }
+
+            clearWinLine() {
+                const svg = document.getElementById('winLineSvg');
+                svg.classList.add('hidden');
+            }
+        }
+
+        const ui = new UIController();
+
+        // Initialize Lucide icons on load
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
